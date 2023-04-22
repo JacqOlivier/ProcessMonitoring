@@ -1,0 +1,18 @@
+{
+    "dataset": {
+        "name": "MovingSineWave",
+        "simulation_length": 500,
+        "transition_position": 0.7, 
+        "permutation": "iaaft", 
+        "window_length": 25, 
+        "stride": 1, 
+        "seed": 123
+    },
+    "feature_extraction": {
+        "name": "AutoEncoderFeatures",
+        "num_trees": 200
+    }, 
+    "mode": {
+        "name": "ExtractFeatures"
+    }
+}

@@ -1,0 +1,120 @@
+2023-04-19 17:44:28,812:ERROR:root:Unable to find json config file.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 47, in main
+    with open(argv, 'r') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'home/juc/dev/ProcessMonitoring/processmonitoring/cfg/MovingSineWave_randomshuffle_RF _Features.json'
+2023-04-19 17:44:54,640:ERROR:root:Unable to find json config file.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 47, in main
+    with open(argv, 'r') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'home/juc/dev/ProcessMonitoring/processmonitoring/cfg/MovingSineWave_randomshuffle_RF_Features.json'
+2023-04-19 17:48:07,538:ERROR:root:Unable to find json config file.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 47, in main
+    with open(argv, 'r') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'home/juc/dev/ProcessMonitoring/processmonitoring/cfg/MovingSineWave_randomshuffle_RF_Features.json'
+2023-04-19 18:20:36,891:ERROR:root:Exception occurred in experiment.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 60, in main
+    _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/experiments/runner.py", line 44, in __init__
+    self.model.train(mode=self._run_config)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/RandomForestFeatureExtraction.py", line 53, in train
+    self._project_NOCFault_features2D(X, y)
+TypeError: RandomForestFeatures._project_NOCFault_features2D() takes 1 positional argument but 3 were given
+2023-04-19 18:22:06,894:ERROR:root:Exception occurred in experiment.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 60, in main
+    _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/experiments/runner.py", line 44, in __init__
+    self.model.train(mode=self._run_config)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/RandomForestFeatureExtraction.py", line 53, in train
+    self._project_NOCFault_features2D()
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/RandomForestFeatureExtraction.py", line 110, in _project_NOCFault_features2D
+    self._projected_features[i,:] = self.eval_in_feature_space(X[i,:])
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/RandomForestFeatureExtraction.py", line 66, in eval_in_feature_space
+    return self._OCSVM.score_samples(fs_sample.reshape(1,-1))
+AttributeError: 'RandomForestFeatures' object has no attribute '_OCSVM'
+2023-04-19 18:46:42,285:ERROR:root:Unable to find json config file.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 47, in main
+    with open(argv, 'r') as f:
+FileNotFoundError: [Errno 2] No such file or directory: '/home/juc/dev/ProcessMonitoring/processmonitoring/cfg/processmonitoring/cfg/MovingSineWave_whitenoise_RF_Features.json'
+2023-04-19 18:48:07,339:ERROR:root:Unable to find json config file.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 47, in main
+    with open(argv, 'r') as f:
+FileNotFoundError: [Errno 2] No such file or directory: '/home/juc/dev/ProcessMonitoring/processmonitoring/cfg/processmonitoring/cfg/MovingSineWave_iaaft_RF_Features.json'
+2023-04-19 19:27:21,179:ERROR:root:Exception occurred in experiment.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 60, in main
+    _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/experiments/runner.py", line 30, in __init__
+    self.dataset = SineWaveToRandom.SineWaveToRandom(self._data_config['simulation_length'],
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/datasets/SineWaveToRandom.py", line 29, in __init__
+    self._segment_and_split()
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/datasets/GenericDataset.py", line 37, in _segment_and_split
+    self.num_windows = int(((len(self.time_series) - self.window_length)) / self.stride)
+TypeError: object of type 'NoneType' has no len()
+2023-04-19 19:30:02,628:ERROR:root:Exception occurred in experiment.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 60, in main
+    _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/experiments/runner.py", line 30, in __init__
+    self.dataset = SineWaveToRandom.SineWaveToRandom(self._data_config['simulation_length'],
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/datasets/SineWaveToRandom.py", line 27, in __init__
+    self._generate_data()
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/datasets/SineWaveToRandom.py", line 51, in _generate_data
+    self.time_series[self.fault_pos:] = np.array(
+TypeError: 'NoneType' object does not support item assignment
+2023-04-19 20:15:05,243:ERROR:root:Exception occurred in experiment.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 60, in main
+    _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/experiments/runner.py", line 44, in __init__
+    self.model = AutoEncoder.AutoEncoderFeatures(self.dataset,
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/AutoEncoder.py", line 20, in __init__
+    self._get_latent_size()
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/AutoEncoder.py", line 35, in _get_latent_size
+    self._hidden_layer_size = np.argmax(np.where(np.cumsum(pca_obj.explained_variance_ratio_) >= 0.95), 1, 0)
+  File "<__array_function__ internals>", line 200, in argmax
+  File "/home/juc/.local/lib/python3.10/site-packages/numpy/core/fromnumeric.py", line 1242, in argmax
+    return _wrapfunc(a, 'argmax', axis=axis, out=out, **kwds)
+  File "/home/juc/.local/lib/python3.10/site-packages/numpy/core/fromnumeric.py", line 54, in _wrapfunc
+    return _wrapit(obj, method, *args, **kwds)
+  File "/home/juc/.local/lib/python3.10/site-packages/numpy/core/fromnumeric.py", line 43, in _wrapit
+    result = getattr(asarray(obj), method)(*args, **kwds)
+TypeError: output must be an array
+2023-04-19 21:39:11,658:ERROR:root:Exception occurred in experiment.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 60, in main
+    _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/experiments/runner.py", line 51, in __init__
+    self.model.train(mode=self._run_config)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/AutoEncoder.py", line 26, in train
+    self.model = AE(self._hidden_layer_size,
+TypeError: AE.__init__() missing 2 required positional arguments: 'loss_function' and 'optimizer'
+2023-04-19 22:20:08,003:ERROR:root:Exception occurred in experiment.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 60, in main
+    _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/experiments/runner.py", line 51, in __init__
+    self.model.train(mode=self._run_config)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/AutoEncoder.py", line 31, in train
+    self._extract_features()
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/AutoEncoder.py", line 161, in _extract_features
+    self._projected_features = np.zeros((X, self._hidden_layer_size))
+TypeError: only integer scalar arrays can be converted to a scalar index
+2023-04-19 22:20:57,286:ERROR:root:Exception occurred in experiment.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 60, in main
+    _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/experiments/runner.py", line 51, in __init__
+    self.model.train(mode=self._run_config)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/AutoEncoder.py", line 31, in train
+    self._extract_features()
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/AutoEncoder.py", line 163, in _extract_features
+    self._projected_features[i,:] = self.eval_in_feature_space(X[i,:])
+  File "/home/juc/.local/lib/python3.10/site-packages/torch/_tensor.py", line 958, in __array__
+    return self.numpy().astype(dtype, copy=False)
+RuntimeError: Can't call numpy() on Tensor that requires grad. Use tensor.detach().numpy() instead.
