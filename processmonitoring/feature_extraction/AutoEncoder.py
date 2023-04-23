@@ -164,21 +164,21 @@ class AutoEncoderFeatures(GenericFeatureExtractor.FeatureExtractor):
 
         # find two columns with highest variance
         from sklearn.preprocessing import StandardScaler
-        scaled_features = StandardScaler.fit_transform(self._projected_features)
-
-        #idx = (-arr).argsort()[:n]
-        # TODO: contimue from here.
+        from sklearn.decomposition import PCA
+        scaled_features = StandardScaler().fit_transform(self._projected_features)
+        pca_obj = PCA().fit(scaled_features)
+        res = pca_obj.transform(scaled_features)
 
         plt.figure(figsize=(16, 9))
-        plt.scatter(self._projected_features[:,0][y==0], self._projected_features[:,1][y==0], c='blue', marker='o')
-        plt.scatter(self._projected_features[:,0][y==2], self._projected_features[:,1][y==2], c='green', marker='x')
-        plt.scatter(self._projected_features[:,0][y==1], self._projected_features[:,1][y==1], c='red', marker='*')
-        plt.xlabel('1st MDS component')
-        plt.ylabel('2nd MDS component')
+        plt.scatter(res[:,0][y==0], res[:,1][y==0], c='blue', marker='o')
+        plt.scatter(res[:,0][y==2], res[:,1][y==2], c='green', marker='x')
+        plt.scatter(res[:,0][y==1], res[:,1][y==1], c='red', marker='*')
+        plt.xlabel(f'1st PC: {pca_obj.explained_variance_ratio_[0]*100} % variance captures')
+        plt.ylabel(f'2nd PC: {pca_obj.explained_variance_ratio_[0]*100} % variance captures')
         plt.legend(['Train', 'Validation', 'Fault'])
-        plt.title(f'2D MDS coordinates in {self._manifold_dimension}-dimensional space.')
+        plt.title(f'PCA of hidden layer features explaining {np.sum(pca_obj.explained_variance_ratio_[:2])*100} % of variance')
         plt.grid(True)
-        plt.savefig(fname=os.path.join(self.save_to_folder, 'RandomForestFeaturesWithFault'))
+        plt.savefig(fname=os.path.join(self.save_to_folder, 'AutoEncodeFeaturesWIthFault'))
 
 class AE(nn.Module):
 

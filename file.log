@@ -118,3 +118,14 @@ Traceback (most recent call last):
   File "/home/juc/.local/lib/python3.10/site-packages/torch/_tensor.py", line 958, in __array__
     return self.numpy().astype(dtype, copy=False)
 RuntimeError: Can't call numpy() on Tensor that requires grad. Use tensor.detach().numpy() instead.
+2023-04-23 11:21:47,742:ERROR:root:Exception occurred in experiment.
+Traceback (most recent call last):
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/run.py", line 60, in main
+    _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/experiments/runner.py", line 51, in __init__
+    self.model.train(mode=self._run_config)
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/AutoEncoder.py", line 31, in train
+    self._extract_features()
+  File "/home/juc/dev/ProcessMonitoring/processmonitoring/feature_extraction/AutoEncoder.py", line 168, in _extract_features
+    scaled_features = StandardScaler.fit_transform(self._projected_features)
+TypeError: TransformerMixin.fit_transform() missing 1 required positional argument: 'X'
