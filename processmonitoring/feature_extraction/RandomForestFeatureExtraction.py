@@ -51,6 +51,7 @@ class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
         elif mode['name'] == 'ExtractFeatures' or self.save_to_folder:
             self._plot_features_vs_permuted2D(y)
             self._project_NOCFault_features2D()
+            #self.feature_space_svm()
         else:
             raise RuntimeError(f'Invalid run mode: {mode["name"]}, specified for RandomForestFeatureExtraction')
     
@@ -125,8 +126,79 @@ class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
         plt.grid(True)
         plt.savefig(fname=os.path.join(self.save_to_folder, 'RandomForestFeaturesWithFault'))
 
-        
+        OCSVM = OneClassSVM().fit(self._projected_features[:,:2][y==0])
 
+        y_pred_train = OCSVM.predict(self._projected_features[:, :2][y==0])
+        y_pred_val = OCSVM.predict(self._projected_features[:, :2][y==2])
+        y_pred_fault = OCSVM.predict(self._projected_features[:, :2][y==1])
+        n_error_train = y_pred_train[y_pred_train == -1].size
+        n_error_test = y_pred_val[y_pred_val == -1].size
+        n_error_outliers = y_pred_fault[y_pred_fault == 1].size
+
+        xx, yy = np.meshgrid(np.linspace(np.min(self._projected_features[:,0]), np.max(self._projected_features[:,1]), 500), 
+                             np.linspace(np.min(self._projected_features[:,0]), np.max(self._projected_features[:,1]), 500))
+
+        # plot the line, the points, and the nearest vectors to the plane
+        Z = OCSVM.decision_function(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+
+        plt.figure(figsize=(16, 9))
+        plt.contourf(xx, yy, Z, levels=np.linspace(Z.min(), 0, 7), cmap=plt.cm.PuBu)
+        a = plt.contour(xx, yy, Z, levels=[0], linewidths=2, colors="darkred")
+        plt.contourf(xx, yy, Z, levels=[0, Z.max()], colors="palevioletred")
+
+        s = 40
+        b1 = plt.scatter(self._projected_features[:,0][y==0], self._projected_features[:, 1][y==0], c="white", s=s, edgecolors="k")
+        b2 = plt.scatter(self._projected_features[:,0][y==2], self._projected_features[:,1][y==2], c="blueviolet", s=s, edgecolors="k")
+        c = plt.scatter(self._projected_features[:,0][y==1], self._projected_features[:,1][y==1], c="gold", s=s, edgecolors="k")
+        plt.axis("tight")
+        plt.xlim((np.min(self._projected_features[:,0]), np.max(self._projected_features[:,0])))
+        plt.ylim((np.min(self._projected_features[:,1]), np.max(self._projected_features[:,1])))
+        plt.legend(
+            [a.collections[0], b1, b2, c],
+            [
+                "learned boundary",
+                "X NOC",
+                "X val",
+                "Fault",
+            ],
+            loc="upper left",
+            prop=matplotlib.font_manager.FontProperties(size=11),
+        )
+        plt.xlabel(
+            "error train: %d/%d ; errors novel regular: %d/%d ; errors novel abnormal: %d/%d"
+            % (n_error_train, len(y_pred_train), n_error_test, len(y_pred_val), n_error_outliers, len(y_pred_fault))
+        )
+        plt.grid(True)
+        plt.savefig(fname=os.path.join(self.save_to_folder, 'OCSVMPredictionsWithFault'))
+
+        # also use full feature space and output results to json file
+        OCSVM = OneClassSVM().fit(self._projected_features[:,:][y==0])
+        y_pred_train = OCSVM.predict(self._projected_features[:,:][y==0])
+        y_pred_val = OCSVM.predict(self._projected_features[:,:][y==2])
+        y_pred_fault = OCSVM.predict(self._projected_features[:,:][y==1])
+        n_error_train = y_pred_train[y_pred_train == -1].size
+        n_error_val = y_pred_val[y_pred_val == -1].size
+        n_error_fault = y_pred_fault[y_pred_fault == 1].size
+
+        res = {
+            "train" : {
+                "num_samples": self.dataset.X_tr.shape[0],
+                "accuracy": (len(y_pred_train) - n_error_train) / len(y_pred_train) * 100
+            }, 
+            "validation" : {
+                "num_samples": self.dataset.X_val.shape[0],
+                "accuracy": (len(y_pred_val) - n_error_val) / len(y_pred_val) * 100
+            },
+            "fault" : {
+                "num_samples": self.dataset.X_test.shape[0],
+                "accuracy": (len(y_pred_fault) - n_error_fault) / len(y_pred_fault) * 100
+            }
+        }
+
+        import json
+        with open(os.path.join(self.save_to_folder, 'FullFeatureSpaceResults.json'), 'w', encoding='utf-8') as f:
+            json.dump(res, f, ensure_ascii=False, indent=4)
 
     def _proximity_matrix(self, 
                           model: RandomForestClassifier, 

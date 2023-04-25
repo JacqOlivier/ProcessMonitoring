@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/processmonitoring/run.py",
             "console": "integratedTerminal",
             "args": [
-                "/home/juc/dev/ProcessMonitoring/processmonitoring/cfg/AutoEncoder/SineWaveToRandom_AE_Features.json"
+                "/home/juc/dev/ProcessMonitoring/processmonitoring/cfg/SWTR/AutoEncoder/SWTR_iaaft_25_AE_Features.json"
             ]
         }
     ]

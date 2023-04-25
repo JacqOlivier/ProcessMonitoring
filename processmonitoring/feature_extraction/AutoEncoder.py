@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, random_split
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import matplotlib
 
 class AutoEncoderFeatures(GenericFeatureExtractor.FeatureExtractor):
 
@@ -29,6 +30,7 @@ class AutoEncoderFeatures(GenericFeatureExtractor.FeatureExtractor):
 
         if mode['name'] == 'ExtractFeatures':
             self._extract_features()
+            self.feature_space_svm()
         
     def eval_in_feature_space(self, sample: np.ndarray) -> float:
         return self.model.encode(sample)
@@ -102,6 +104,12 @@ class AutoEncoderFeatures(GenericFeatureExtractor.FeatureExtractor):
             # Calculate the average training loss for this epoch
             train_loss /= len(train_dataloader.dataset)
 
+            #from torchviz import make_dot
+            # save plot of model architecture
+            #yhat = self.model(inputs)
+            #make_dot(yhat, params=dict(list(self.model.named_parameters()))).render("rnn_torchviz", format="png")
+
+
             # Set the model to evaluation mode
             self.model.eval()
 
@@ -161,24 +169,102 @@ class AutoEncoderFeatures(GenericFeatureExtractor.FeatureExtractor):
         self._projected_features = np.zeros((X.shape[0], self._hidden_layer_size))
         for i in range(X.shape[0]):
             self._projected_features[i,:] = self.eval_in_feature_space(X[i,:]).detach().numpy()
-
+        
         # find two columns with highest variance
         from sklearn.preprocessing import StandardScaler
         from sklearn.decomposition import PCA
         scaled_features = StandardScaler().fit_transform(self._projected_features)
-        pca_obj = PCA().fit(scaled_features)
-        res = pca_obj.transform(scaled_features)
+        
+        pca = PCA().fit(scaled_features[y==0])
+        pca_train = pca.transform(scaled_features[y==0])
+        pca_val = pca.transform(scaled_features[y==2])
+        pca_fault = pca.transform(scaled_features[y==1])
 
         plt.figure(figsize=(16, 9))
-        plt.scatter(res[:,0][y==0], res[:,1][y==0], c='blue', marker='o')
-        plt.scatter(res[:,0][y==2], res[:,1][y==2], c='green', marker='x')
-        plt.scatter(res[:,0][y==1], res[:,1][y==1], c='red', marker='*')
-        plt.xlabel(f'1st PC: {pca_obj.explained_variance_ratio_[0]*100} % variance captures')
-        plt.ylabel(f'2nd PC: {pca_obj.explained_variance_ratio_[0]*100} % variance captures')
+        plt.scatter(pca_train[:,0], pca_train[:,1], c='blue', marker='o')
+        plt.scatter(pca_val[:,0], pca_val[:,1], c='green', marker='x')
+        plt.scatter(pca_fault[:,0], pca_fault[:,1], c='red', marker='*')
+        plt.xlabel(f'1st PC: {pca.explained_variance_ratio_[0]*100:.2f} % variance captures')
+        plt.ylabel(f'2nd PC: {pca.explained_variance_ratio_[1]*100:.2f} % variance captures')
         plt.legend(['Train', 'Validation', 'Fault'])
-        plt.title(f'PCA of hidden layer features explaining {np.sum(pca_obj.explained_variance_ratio_[:2])*100} % of variance')
+        plt.title(f'PCA of hidden layer features explaining {np.sum(pca.explained_variance_ratio_[:2])*100:.2f} % of variance')
         plt.grid(True)
         plt.savefig(fname=os.path.join(self.save_to_folder, 'AutoEncodeFeaturesWIthFault'))
+
+        from sklearn.svm import OneClassSVM
+        OCSVM = OneClassSVM().fit(pca_train[:,:2])
+
+        y_pred_train = OCSVM.predict(pca_train[:,:2])
+        y_pred_val = OCSVM.predict(pca_val[:,:2])
+        y_pred_fault = OCSVM.predict(pca_fault[:,:2])
+        n_error_train = y_pred_train[y_pred_train == -1].size
+        n_error_val = y_pred_val[y_pred_val == -1].size
+        n_error_fault = y_pred_fault[y_pred_fault == 1].size
+
+        xx, yy = np.meshgrid(np.linspace(np.min(pca_train[:,0]), np.max(pca_train[:,0]), 500), 
+                             np.linspace(np.min(pca_train[:,1]), np.max(pca_train[:,1]), 500))
+
+        # plot the line, the points, and the nearest vectors to the plane
+        Z = OCSVM.decision_function(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+
+        plt.figure(figsize=(16, 9))
+        plt.contourf(xx, yy, Z, levels=np.linspace(Z.min(), 0, 7), cmap=plt.cm.PuBu)
+        a = plt.contour(xx, yy, Z, levels=[0], linewidths=2, colors="darkred")
+        plt.contourf(xx, yy, Z, levels=[0, Z.max()], colors="palevioletred")
+
+        s = 40
+        b1 = plt.scatter(pca_train[:,0], pca_train[:,1], c="white", s=s, edgecolors="k")
+        b2 = plt.scatter(pca_val[:,0], pca_val[:,1], c="blueviolet", s=s, edgecolors="k")
+        c = plt.scatter(pca_fault[:,0], pca_fault[:,1], c="gold", s=s, edgecolors="k")
+        plt.axis("tight")
+        plt.xlim((np.min(pca_train[:,0]), np.max(pca_train[:,0])))
+        plt.ylim((np.min(pca_train[:,1]), np.max(pca_train[:,1])))
+        plt.legend(
+            [a.collections[0], b1, b2, c],
+            [
+                "learned boundary",
+                "X NOC",
+                "X val",
+                "Fault",
+            ],
+            loc="upper left",
+            prop=matplotlib.font_manager.FontProperties(size=11),
+        )
+        plt.xlabel(
+            "error train: %d/%d ; errors novel regular: %d/%d ; errors novel abnormal: %d/%d"
+            % (n_error_train, len(y_pred_train), n_error_val, len(y_pred_val), n_error_fault, len(y_pred_fault))
+        )
+        plt.grid(True)
+        plt.savefig(fname=os.path.join(self.save_to_folder, 'OCSVMPredictionsWithFaultin2DPCASPACE'))
+
+        # also use full feature space and output results to json file
+        OCSVM = OneClassSVM().fit(self._projected_features[:,:][y==0])
+        y_pred_train = OCSVM.predict(self._projected_features[:,:][y==0])
+        y_pred_val = OCSVM.predict(self._projected_features[:,:][y==2])
+        y_pred_fault = OCSVM.predict(self._projected_features[:,:][y==1])
+        n_error_train = y_pred_train[y_pred_train == -1].size
+        n_error_val = y_pred_val[y_pred_val == -1].size
+        n_error_fault = y_pred_fault[y_pred_fault == 1].size
+
+        res = {
+            "train" : {
+                "num_samples": self.dataset.X_tr.shape[0],
+                "accuracy": (len(y_pred_train) - n_error_train) / len(y_pred_train) * 100
+            }, 
+            "validation" : {
+                "num_samples": self.dataset.X_val.shape[0],
+                "accuracy": (len(y_pred_val) - n_error_val) / len(y_pred_val) * 100
+            },
+            "fault" : {
+                "num_samples": self.dataset.X_test.shape[0],
+                "accuracy": (len(y_pred_fault) - n_error_fault) / len(y_pred_fault) * 100
+            }
+        }
+
+        import json
+        with open(os.path.join(self.save_to_folder, 'FullFeatureSpaceResults.json'), 'w', encoding='utf-8') as f:
+            json.dump(res, f, ensure_ascii=False, indent=4)
 
 class AE(nn.Module):
 
@@ -206,8 +292,6 @@ class AE(nn.Module):
             nn.ReLU(),
             nn.Linear(in_features=self._hidden_layer_size*2, out_features=self.dataset.window_length)
         )
-
-        self._loss_function = nn.MSELoss()
 
     def forward(self, x):
         x = self._encoder(x)
