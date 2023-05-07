@@ -1,6 +1,6 @@
 import json
 from processmonitoring.datasets import MovingSineWave, SineWaveToRandom
-from processmonitoring.feature_extraction import RandomForestFeatureExtraction, AutoEncoder
+from processmonitoring.feature_extraction import RandomForestFeatureExtraction, AutoEncoder, CNNFeatures
 from processmonitoring.applications import spc
 
 class ExperimentRunner:
@@ -44,6 +44,10 @@ class ExperimentRunner:
             self.model = AutoEncoder.AutoEncoderFeatures(self.dataset, 
                                                          self._feature_config, 
                                                          self._save_to_folder)
+        elif self._feature_config['name'] == 'CNNFeatures':
+            self.model = CNNFeatures.CNN(self.dataset, 
+                                         self._feature_config, 
+                                         self._save_to_folder)
         else: 
             raise RuntimeError(f'Invalid feature extraction method selected: {self._feature_config["name"]}')
         
