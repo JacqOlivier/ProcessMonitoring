@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 import logging
@@ -5,14 +6,11 @@ import logging
 from processmonitoring.experiments import runner
 
 def _start_logger():
-
     logging.basicConfig(filename = 'file.log',
                         level = logging.INFO,
                         format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
 
-import os
-
-def create_new_folder(directory_path: str):
+def _create_new_folder(directory_path: str):
     """
     Opens a new folder inside the config file directory with the _plots suffix to store all 
     plots made during experiments.
@@ -40,18 +38,28 @@ def create_new_folder(directory_path: str):
         raise ValueError("Failed to create the new folder.")
 
 def main(argv):
+    """
+    Program entry point. 
+    Opens a logger.
+    Attempts to load a config file from directory given as commandline argument.
+    Generates folder to store plots in same directory as config file.
+    Hands config file to experiment runner class.
+
+    Args:
+        argv (str): Absolute to config file. Only single argument supported.
+    """
 
     _start_logger()
 
     try:
         with open(argv, 'r') as f:
             config = json.load(f)
-    except FileNotFoundError:
-        logging.exception('Unable to find json config file.')
+    except Exception:
+        logging.exception('Unable to find or open json config file.')
         raise
 
     try:
-        plot_dir = create_new_folder(argv)
+        plot_dir = _create_new_folder(argv)
     except:
         logging.exception("Exception during folder creation.")
         raise
@@ -59,7 +67,7 @@ def main(argv):
     try:
         _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
     except:
-        logging.exception("Exception occurred in experiment.")
+        logging.exception("Exception occurred somewhere else in experiment. Traceback below")
         raise
 
 if __name__ == '__main__':
