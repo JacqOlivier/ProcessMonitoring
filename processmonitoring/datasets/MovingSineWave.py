@@ -1,23 +1,17 @@
-from processmonitoring.datasets import GenericDataset
+from processmonitoring.datasets import register_function, GenericDataset
+
 import numpy as np
 import matplotlib.pyplot as plt
 
+@register_function('MovingSineWave')
 class MovingSineWaveGenerator(GenericDataset.DatasetWithPermutations):
 
     def __init__(self, 
-                 simulation_length : int, 
-                 transition_position : float,
-                 permutation: str, 
-                 window_length: int, 
-                 stride: int = 1,
+                 data_config: dict,
                  save_to_folder: str = None,
                  coefficients: list = [0.11, 0.12]):
         
-        super().__init__(simulation_length, 
-                         transition_position,
-                         permutation,  
-                         window_length, 
-                         stride, 
+        super().__init__(data_config, 
                          save_to_folder)
         
         self.coefficients = coefficients

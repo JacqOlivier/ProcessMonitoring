@@ -1,28 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from processmonitoring.datasets import GenericDataset
+from processmonitoring.datasets import register_function, GenericDataset
 
+@register_function('SineWaveToRandom')
 class SineWaveToRandom(GenericDataset.DatasetWithPermutations):
 
     def __init__(self, 
-                 simulation_length: int, 
-                 transition_position: float,
-                 permutation: str, 
-                 window_length: int, 
-                 stride: int = 1, 
+                 data_config: dict, 
                  save_to_folder: str = None
                  ) -> None:
         
-        super().__init__(simulation_length, 
-                         transition_position,
-                         permutation,  
-                         window_length, 
-                         stride, 
+        super().__init__(data_config, 
                          save_to_folder)
-        
-        self.length = simulation_length
-        self.fault_pos = int(transition_position*self.length)
 
         self._generate_data()
         self._segment_and_split()

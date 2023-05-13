@@ -6,21 +6,17 @@ from processmonitoring.permutations import permutations
 class DatasetWithPermutations(object):
 
     def __init__(self, 
-                 simulation_length: int, 
-                 transition_position: float,
-                 permutation: str, 
-                 window_length: int, 
-                 stride: int = 1, 
+                 data_config: dict,
                  save_to_folder: str = None
                  ) -> None:
         
-        
-        self.length = simulation_length
-        self.transition_fraction = transition_position
-        self.fault_pos = int(transition_position*self.length)
-        self.permutation = permutation
-        self.window_length = window_length
-        self.stride = stride
+        self.length = data_config['simulation_length']
+        self.transition_fraction = data_config['transition_position']
+        self.fault_pos = int(data_config['transition_position']*self.length)
+        self.permutation = data_config['permutation']
+        self.window_length = data_config['window_length']
+        self.stride = data_config['stride']
+        self.seed = data_config['seed']
         self.save_to_folder = save_to_folder
         
         self.time_series = None

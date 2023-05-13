@@ -1,7 +1,7 @@
 import json
-from processmonitoring.datasets import MovingSineWave, SineWaveToRandom
-from processmonitoring.feature_extraction import RandomForestFeatureExtraction, AutoEncoder, CNNFeatures
-from processmonitoring.applications import spc
+from processmonitoring import datasets
+#from processmonitoring.feature_extraction import RandomForestFeatureExtraction, AutoEncoder, CNNFeatures
+#from processmonitoring.applications import spc
 
 class ExperimentRunner:
 
@@ -19,6 +19,8 @@ class ExperimentRunner:
 
         self._save_to_folder = save_to_folder
 
+        self.dataset = datasets.dataset_factory(self._data_config['name'])
+        """
         if self._data_config['name'] == 'MovingSineWave':
             self.dataset = MovingSineWave.MovingSineWaveGenerator(self._data_config['simulation_length'], 
                                                                   self._data_config['transition_position'], 
@@ -59,4 +61,4 @@ class ExperimentRunner:
                                   self.model,
                                   self._save_to_folder)
 
-    
+        """
