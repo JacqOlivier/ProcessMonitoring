@@ -83,7 +83,7 @@ class DatasetWithPermutations(object):
             else:
                 self.y[i] = 0
 
-        num_fault_windows = len(self.y == 2)
+        num_fault_windows = (self.y == 2).sum()
 
         # divide into train-test splits for model training and validation
         self.X_tr, self.X_test, self.y_tr, self.y_test = train_test_split(self.X, 
