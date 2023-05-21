@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from processmonitoring.datasets import GenericDataset
+from processmonitoring.datasets import dataset
 from processmonitoring.feature_extraction import GenericFeatureExtractor
 
 class SPC():
 
     def __init__(self, 
-                 dataset: GenericDataset.DatasetWithPermutations, 
+                 dataset: dataset.DatasetWithPermutations, 
                  feature_extractor: GenericFeatureExtractor.FeatureExtractor,
                  save_to_folder: str = None) -> None:
         

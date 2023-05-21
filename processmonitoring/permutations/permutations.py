@@ -96,9 +96,9 @@ class Permutations():
     
 if __name__ == "__main__":
 
-    from processmonitoring.datasets import MovingSineWave
+    from processmonitoring.datasets import movingsinewave
 
-    time_series = MovingSineWave.MovingSineWaveGenerator(1000, 0.5)
+    time_series = movingsinewave.MovingSineWaveGenerator(1000, 0.5)
     permute = Permutations(time_series.ts, 123)
 
     shuffle_ts = permute.random_shuffle()

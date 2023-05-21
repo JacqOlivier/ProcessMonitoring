@@ -1,4 +1,4 @@
-from processmonitoring.datasets import GenericDataset
+from processmonitoring.datasets import dataset
 from processmonitoring.feature_extraction import GenericFeatureExtractor
 
 import os
@@ -11,7 +11,7 @@ import tensorflow as tf
 class CNN(GenericFeatureExtractor.FeatureExtractor):
 
     def __init__(self, 
-                 dataset: GenericDataset.DatasetWithPermutations,
+                 dataset: dataset.DatasetWithPermutations,
                  feature_config: dict, 
                  save_to_folder: str = None) -> None:
         

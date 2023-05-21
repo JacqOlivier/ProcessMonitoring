@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from processmonitoring.datasets import register_function, GenericDataset
+from processmonitoring.datasets import dataset
+from processmonitoring.datasets.utils import register_function
 
 @register_function('SineWaveToRandom')
-class SineWaveToRandom(GenericDataset.DatasetWithPermutations):
+class SineWaveToRandom(dataset.DatasetWithPermutations):
 
     def __init__(self, 
                  data_config: dict, 

@@ -1,25 +1,27 @@
-import json
-from processmonitoring import datasets
-#from processmonitoring.feature_extraction import RandomForestFeatureExtraction, AutoEncoder, CNNFeatures
-#from processmonitoring.applications import spc
+import logging
+from processmonitoring.datasets import utils
 
 class ExperimentRunner:
 
     def __init__(self,
-                 config: json, 
+                 config: dict, 
                  save_to_folder: str = None) -> None:
         """Constructor parses the json file and initiates the different parts of the experiment
 
         Args:
-            config (_type_): _description_
+            config (dict): JSON config file to be parsed for experiment details
+            save_to_folder (str): Path to folder generated to store plots.
         """
         self._data_config = config['dataset']
         self._feature_config = config['feature_extraction']
         self._run_config = config['mode']
-
         self._save_to_folder = save_to_folder
+        self._logger = logging.getLogger(__name__)
 
-        self.dataset = datasets.dataset_factory(self._data_config['name'])
+        self._logger.debug('Hi From runnier.')
+
+        self.dataset = utils.dataset_factory(self._data_config['name'])
+        #self.dataset = dataset_factory(self._data_config['name'])
         """
         if self._data_config['name'] == 'MovingSineWave':
             self.dataset = MovingSineWave.MovingSineWaveGenerator(self._data_config['simulation_length'], 

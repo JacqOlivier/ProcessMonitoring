@@ -1,4 +1,4 @@
-from processmonitoring.datasets import GenericDataset
+from processmonitoring.datasets import dataset
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -8,7 +8,7 @@ import json
 class FeatureExtractor:
 
     def __init__(self, 
-                 dataset: GenericDataset.DatasetWithPermutations, 
+                 dataset: dataset.DatasetWithPermutations, 
                  save_to_folder: str = None) -> None:
         
         self.dataset = dataset

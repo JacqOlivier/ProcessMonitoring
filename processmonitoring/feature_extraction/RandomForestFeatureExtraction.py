@@ -3,7 +3,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.manifold import MDS
 from sklearn.svm import OneClassSVM
-from processmonitoring.datasets import GenericDataset
+from processmonitoring.datasets import dataset
 from processmonitoring.feature_extraction import GenericFeatureExtractor
 
 import matplotlib.pyplot as plt
@@ -13,7 +13,7 @@ import os
 class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
 
     def __init__(self, 
-                 dataset: GenericDataset.DatasetWithPermutations, 
+                 dataset: dataset.DatasetWithPermutations, 
                  num_trees: int, 
                  save_to_folder: str = None
                  ) -> None:
@@ -276,9 +276,9 @@ class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
 
 if __name__ == "__main__":
     
-    from processmonitoring.datasets import MovingSineWave
+    from processmonitoring.datasets import movingsinewave
 
-    dataset = MovingSineWave.MovingSineWaveGenerator(1000, 0.5, 'iaaft', 100)
+    dataset = movingsinewave.MovingSineWaveGenerator(1000, 0.5, 'iaaft', 100)
 
     model = RandomForestFeatures(dataset, 100)
     model.train()

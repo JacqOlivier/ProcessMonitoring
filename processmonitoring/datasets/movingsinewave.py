@@ -1,10 +1,11 @@
-from processmonitoring.datasets import register_function, GenericDataset
+from processmonitoring.datasets import dataset
+from processmonitoring.datasets.utils import register_function
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 @register_function('MovingSineWave')
-class MovingSineWaveGenerator(GenericDataset.DatasetWithPermutations):
+class MovingSineWaveGenerator(dataset.DatasetWithPermutations):
 
     def __init__(self, 
                  data_config: dict,

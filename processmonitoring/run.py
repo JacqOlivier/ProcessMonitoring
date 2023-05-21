@@ -7,7 +7,7 @@ from processmonitoring.experiments import runner
 
 def _start_logger():
     logging.basicConfig(filename = 'file.log',
-                        level = logging.INFO,
+                        level = logging.DEBUG,
                         format = '%(asctime)s:%(levelname)s:%(name)s:%(message)s')
 
 def _create_new_folder(directory_path: str):

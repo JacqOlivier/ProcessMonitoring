@@ -1,5 +1,5 @@
 from processmonitoring.feature_extraction import GenericFeatureExtractor
-from processmonitoring.datasets import GenericDataset
+from processmonitoring.datasets import dataset
 
 import torch
 from torch import nn
@@ -13,7 +13,7 @@ import matplotlib
 class AutoEncoderFeatures(GenericFeatureExtractor.FeatureExtractor):
 
     def __init__(self, 
-                 dataset: GenericDataset.DatasetWithPermutations, 
+                 dataset: dataset.DatasetWithPermutations, 
                  feature_config: dict,
                  save_to_folder: str = None) -> None:
         
@@ -270,7 +270,7 @@ class AE(nn.Module):
 
     def __init__(self, 
                  hidden_layer_size: int, 
-                 dataset: GenericDataset.DatasetWithPermutations,
+                 dataset: dataset.DatasetWithPermutations,
                  mid_layer_size: int = None) -> None:
         super().__init__()
         self._hidden_layer_size = hidden_layer_size
