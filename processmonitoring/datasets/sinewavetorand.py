@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 from processmonitoring.datasets import dataset
 from processmonitoring.datasets.utils import register_function
@@ -14,13 +13,6 @@ class SineWaveToRandom(dataset.DatasetWithPermutations):
         
         super().__init__(data_config, 
                          save_to_folder)
-
-        self._generate_data()
-        self._segment_and_split()
-        self._generate_permuted_dataset()
-
-        if self.save_to_folder:
-            self._plot_to_folder()
 
     def _generate_data(self) -> None:
 
@@ -44,15 +36,4 @@ class SineWaveToRandom(dataset.DatasetWithPermutations):
             )
         self.labels = np.concatenate([np.zeros((self.fault_pos,)), np.ones(self.length-self.fault_pos,)])
 
-    def _plot_to_folder(self):
-
-        import os
-
-        plt.figure(figsize=(16,9))
-        plt.plot(self.time_series)
-        plt.axvline(self.fault_pos, c='r', linestyle='--')
-        plt.xlabel('Time')
-        plt.ylabel('y')
-        plt.grid(True)
-        plt.legend(["Time series", "Fault Position"])
-        plt.savefig(fname=os.path.join(self.save_to_folder, 'MovingSineWaveTimeSeries'))
+    

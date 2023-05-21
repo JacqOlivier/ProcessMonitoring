@@ -4,16 +4,26 @@ import statsmodels.api as sm
 from nolitsa import surrogates
 import os
 
+"""
+Class generates a permuted dataset from input time series.
+"""
 class Permutations():
 
     def __init__(self,
                  time_series : np.ndarray, 
-                 seed : float, 
-                 save_to_folder : str = None):
+                 prng, 
+                 save_to_folder : str = None) -> None:
+        """Constructor.
+
+        Args:
+            time_series (np.ndarray): Time series, self.time_series object from DatasetWithPermutations should be passed.
+            prng (np.random.default_rng()): np.default_rng() object
+            save_to_folder (str, optional): Plotting directory. Defaults to None.
+        """
 
         self.ts = time_series
         self.save_to_folder = save_to_folder
-        self._PRNG = np.random.default_rng(seed)
+        self._PRNG = prng
 
     def get_ts(self, permutation: str):
 
@@ -106,17 +116,7 @@ if __name__ == "__main__":
     iaaft_ts = permute.iaaft()
 
     Permutations.plot(time_series.ts, iaaft_ts)
-    
-    """
-    Permutations.compare_autocorrelation(time_series.ts, shuffle_ts)
-    Permutations.compare_distribution(time_series.ts, shuffle_ts)
 
-    Permutations.compare_autocorrelation(time_series.ts, white_noise_ts)
-    Permutations.compare_distribution(time_series.ts, white_noise_ts)
-
-    Permutations.compare_autocorrelation(time_series.ts, iaaft_ts)
-    Permutations.compare_distribution(time_series.ts, iaaft_ts)
-    """
 
 
 __all__ = ['Permutations']
