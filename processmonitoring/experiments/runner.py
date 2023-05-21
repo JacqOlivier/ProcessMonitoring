@@ -1,5 +1,6 @@
 import logging
-from processmonitoring.datasets import utils
+from processmonitoring.datasets.utils import *
+from processmonitoring.feature_extraction.utils import *
 
 class ExperimentRunner:
 
@@ -18,43 +19,25 @@ class ExperimentRunner:
         self._save_to_folder = save_to_folder
         self._logger = logging.getLogger(__name__)
 
-        self._logger.debug('Hi From runnier.')
-
-        self.dataset = utils.dataset_factory(self._data_config['name'])
-        #self.dataset = dataset_factory(self._data_config['name'])
+        # generate dataset
+        try:
+            self._dataset = dataset_factory(self._data_config['name'])(self._data_config, 
+                                                                       self._save_to_folder)
+        except:
+            self._logger.exception(f'Error trying to generate dataset: {self._data_config["name"]}.')
+            raise
+        
+        # instantiate model
+        try:
+            self._model = feature_factory(self._feature_config['name'])(self._dataset,
+                                                                        self._feature_config, 
+                                                                        self._save_to_folder)
+        except:
+            self._logger.exception(f'Error trying to generate feature model: {self._feature_config["name"]}.')
+            raise
+        
+        
         """
-        if self._data_config['name'] == 'MovingSineWave':
-            self.dataset = MovingSineWave.MovingSineWaveGenerator(self._data_config['simulation_length'], 
-                                                                  self._data_config['transition_position'], 
-                                                                  self._data_config['permutation'], 
-                                                                  self._data_config['window_length'], 
-                                                                  self._data_config['stride'], 
-                                                                  self._save_to_folder)
-        elif self._data_config['name'] == 'SineWaveToRandom':
-            self.dataset = SineWaveToRandom.SineWaveToRandom(self._data_config['simulation_length'], 
-                                                             self._data_config['transition_position'], 
-                                                             self._data_config['permutation'], 
-                                                             self._data_config['window_length'], 
-                                                             self._data_config['stride'], 
-                                                             self._save_to_folder)
-        else:
-            raise RuntimeError(f'Invalid dataset selected: {self._data_config["name"]}')
-        
-        if self._feature_config['name'] == 'RandomForestFeatureExtraction':
-            self.model = RandomForestFeatureExtraction.RandomForestFeatures(self.dataset, 
-                                                                            self._feature_config['num_trees'], 
-                                                                            self._save_to_folder)
-        elif self._feature_config['name'] == 'AutoEncoderFeatures':
-            self.model = AutoEncoder.AutoEncoderFeatures(self.dataset, 
-                                                         self._feature_config, 
-                                                         self._save_to_folder)
-        elif self._feature_config['name'] == 'CNNFeatures':
-            self.model = CNNFeatures.CNN(self.dataset, 
-                                         self._feature_config, 
-                                         self._save_to_folder)
-        else: 
-            raise RuntimeError(f'Invalid feature extraction method selected: {self._feature_config["name"]}')
-        
         ### Model training step 
         self.model.train(mode=self._run_config)
 

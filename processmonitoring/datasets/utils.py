@@ -13,4 +13,4 @@ def register_function(name):
 def dataset_factory(model_type):
     return __MODEL_DICT__[model_type]
 
-__all__ = ['dataset_factory', 'register_function']
+__all__ = ['dataset_factory']

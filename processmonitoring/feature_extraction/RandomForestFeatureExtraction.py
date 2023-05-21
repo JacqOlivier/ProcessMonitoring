@@ -5,11 +5,13 @@ from sklearn.manifold import MDS
 from sklearn.svm import OneClassSVM
 from processmonitoring.datasets import dataset
 from processmonitoring.feature_extraction import GenericFeatureExtractor
+from processmonitoring.feature_extraction.utils import register_function
 
 import matplotlib.pyplot as plt
 import matplotlib
 import os
 
+@register_function('RandomForestFeatureExtraction')
 class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
 
     def __init__(self, 

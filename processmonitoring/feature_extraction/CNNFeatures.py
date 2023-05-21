@@ -1,5 +1,6 @@
 from processmonitoring.datasets import dataset
 from processmonitoring.feature_extraction import GenericFeatureExtractor
+from processmonitoring.feature_extraction.utils import register_function
 
 import os
 import numpy as np
@@ -8,6 +9,7 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
+@register_function('CNNFeatures')
 class CNN(GenericFeatureExtractor.FeatureExtractor):
 
     def __init__(self, 

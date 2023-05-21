@@ -1,5 +1,6 @@
 from processmonitoring.feature_extraction import GenericFeatureExtractor
 from processmonitoring.datasets import dataset
+from processmonitoring.feature_extraction.utils import register_function
 
 import torch
 from torch import nn
@@ -10,6 +11,7 @@ import matplotlib.pyplot as plt
 import os
 import matplotlib
 
+@register_function('AutoEncoderFeatures')
 class AutoEncoderFeatures(GenericFeatureExtractor.FeatureExtractor):
 
     def __init__(self, 

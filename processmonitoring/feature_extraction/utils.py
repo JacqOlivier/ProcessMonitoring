@@ -13,4 +13,4 @@ def register_function(name):
 def feature_factory(model_type):
     return __MODEL_DICT__[model_type]
 
-__all__ = ['feature_factory', 'register_function']
+__all__ = ['feature_factory']
