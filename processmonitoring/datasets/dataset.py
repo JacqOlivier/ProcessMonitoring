@@ -80,24 +80,17 @@ class DatasetWithPermutations(object):
             # here the ones are from child class is converted to 2's, indicating the fault occurred in the window
             if 1 in y_window:
                 self.y[i] = 2
-            else:
-                self.y[i] = 0
 
-        num_fault_windows = (self.y == 2).sum()
+        # get position where X_tr turns into X_val
+        val_position = int(0.7*self.X[self.y==0,:].shape[0])
+        # get position of first fault window
+        fault_position = np.argmax(self.y==2)
 
-        # divide into train-test splits for model training and validation
-        self.X_tr, self.X_test, self.y_tr, self.y_test = train_test_split(self.X, 
-                                                                          self.y, 
-                                                                          test_size=1-num_fault_windows/self.num_windows, 
-                                                                          random_state=self.seed)
-        
-        # make another validation split
-        self.X_tr, self.X_val, self.y_tr, self.y_val = train_test_split(self.X_tr,
-                                                                          self.y_tr, 
-                                                                          test_size=0.3,
-                                                                          random_state=self.seed)
-        # add one so validation y's equal 1
-        self.y_val = np.zeros_like(self.y_val) + 1
+        # make X_tr smaller
+        self.X_tr = self.X[self.y==0,:][:val_position]
+        self.y_tr = np.zeros((self.X_tr.shape[0],))
+        # adjust self.y to account for validation split
+        self.y[val_position:fault_position] = 1
         
     def _generate_permuted_dataset(self):
         """

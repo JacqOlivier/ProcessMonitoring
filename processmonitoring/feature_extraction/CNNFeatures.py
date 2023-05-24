@@ -17,9 +17,7 @@ class CNN(GenericFeatureExtractor.FeatureExtractor):
                  feature_config: dict, 
                  save_to_folder: str = None) -> None:
         
-        super().__init__(dataset, save_to_folder)
-
-        self._feature_config = feature_config
+        super().__init__(dataset, feature_config, save_to_folder)
 
     def train(self, mode):
         """For model pretraining on X_tr (NOC) data.
@@ -214,3 +212,5 @@ def plot_two_distance_plots(X0: np.ndarray, X1: np.ndarray, save_to_folder=None)
 
     if save_to_folder:
         fig.savefig(fname=os.path.join(save_to_folder, 'ModelTrainingDistancePlots'))
+
+__all__ = ['CNN']

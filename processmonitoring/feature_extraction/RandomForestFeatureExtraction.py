@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 from sklearn.manifold import MDS
 from sklearn.svm import OneClassSVM
 from processmonitoring.datasets import dataset
@@ -11,17 +11,20 @@ import matplotlib.pyplot as plt
 import matplotlib
 import os
 
+"""
+This class executes Random Forest Feature Extraction in an unsupervised manner
+by training the model to distinguish permuted copies of the original data.
+"""
 @register_function('RandomForestFeatureExtraction')
 class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
 
     def __init__(self, 
                  dataset: dataset.DatasetWithPermutations, 
-                 num_trees: int, 
-                 save_to_folder: str = None
-                 ) -> None:
+                 feature_config: dict, 
+                 save_to_folder: str = None) -> None:
         
-        super().__init__(dataset=dataset, save_to_folder=save_to_folder)
-        self.n_estimators = num_trees
+        super().__init__(dataset=dataset, feature_config=feature_config, save_to_folder=save_to_folder)
+        self._n_estimators = self._feature_config['num_trees']
 
     def train(self, mode: dict) -> None:
         """Call the model to train, with modes specified in config file.
@@ -29,47 +32,66 @@ class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
         Args:
             mode (dict): mode dict must be passed from caller
         """
-        # generate train and test datasets
-        X = np.concatenate([self.dataset.X_tr, self.dataset.X_tr_permuted], axis=0)
-        y = np.concatenate([self.dataset.y_tr, self.dataset.y_tr_permuted])
+        # generate a data set with NOC and permuted data; labels: real = 0, permuted = 1
+        # such a dataset not currently generated automatically in Dataset classes
+        X = np.concatenate([self._dataset.X_tr, self._dataset.X_tr_permuted], axis=0)
+        y = np.concatenate([self._dataset.y_tr, self._dataset.y_tr_permuted])
+        X, y = shuffle(X, y)
 
-        mdl = RandomForestClassifier(n_estimators=self.n_estimators).fit(X, y)
-
-        proximity_mat = self._proximity_matrix(mdl, X, plot=True)
-        # calculate dissimilarity matrix
-        dissimilarity_mat = np.eye(proximity_mat.shape[0]) - proximity_mat
-        # fit a MDS model to the dissimilarity matrix
-        self._get_manifold_dimension(dissimilarity_mat)
-        self._feature_set = self._generate_manifold(dissimilarity_mat)
-
-        # train forward and reverse mapping models to map data to extracted feature set
+        # this method does the Random Forest Feature Extraction
+        self._train_base_model(X, y)
+        
+        # train forward mapping models here using training data, but we are still just extracting features (no reconstruction)
         self._train_forward_mapping(X)
 
-        if mode['name'] == 'StatisticalProcessControl':
-            # for feature space spc
-            self._OCSVM = OneClassSVM(gamma='auto').fit(self._feature_set)
-            # for residual space spc
-            self._train_reverse_mapping(X)
-        elif mode['name'] == 'ExtractFeatures' or self.save_to_folder:
-            self._plot_features_vs_permuted2D(y)
-            self._project_NOCFault_features2D()
-            #self.feature_space_svm()
-        else:
-            raise RuntimeError(f'Invalid run mode: {mode["name"]}, specified for RandomForestFeatureExtraction')
-    
-    def eval_in_feature_space(self, sample: np.ndarray, ocsvm=True) -> float:
+        # now we project the original dataset (NOC, val, fault) to the feature space
+        self._features = np.zeros((self._dataset.X.shape[0], self._latent_dimension))
+        for i in range(self._dataset.X.shape[0]):
+            # each row (window) is evaluated separately
+            self._features[i,:] = self.eval_in_feature_space(self._dataset.X[i,:])
+
+        if self._save_to_folder:
+            self._plot_train_features(y)
+            self._plot_features()
+        
+    def _train_base_model(self, X: np.ndarray, y: np.ndarray) -> None:
+        """This function generates the feature space using NOC and permuted NOC data.
+
+        Args:
+            X (np.ndarray): NOC and permuted data windows, shuffled
+            y (np.ndarray): labels (0=NOC, 1=permuted)
+        """
+        # train a RF model to classify real vs permuted data
+        mdl = RandomForestClassifier(n_estimators=self._n_estimators).fit(X, y)
+        # generate a proximity matrix from the samples in X
+        # NOTE: This function currently uses full X-matrix that was also used for training.
+        proximity_mat = self._proximity_matrix(mdl, X, plot=True)
+        # calculate dissimilarity matrix (1 - P)
+        dissimilarity_mat = np.eye(proximity_mat.shape[0]) - proximity_mat
+        # fit a MDS model to the dissimilarity matrix
+        # first need to get crossing dimension as estimate of data dimensionality
+        self._get_manifold_dimension(dissimilarity_mat)
+        # project all training data to manifold with calculated dimension
+        self._train_features = self._generate_manifold(dissimilarity_mat)
+
+    def eval_in_feature_space(self, sample: np.ndarray) -> np.ndarray:
+        """This method is called in both 'ExtractFeatures' and 'SPC' to project single samples to the feature space.
+
+        Args:
+            sample (np.ndarray): (1 x M) sample from segmented time series (M = window length)
+
+        Returns:
+            fs_sample (np.ndarray):  (1 x self._manifold_dimension) projection of sample to feature space
+        """
 
         # forward mapping to feature space
-        fs_sample = np.zeros((self._feature_set.shape[1]))
+        fs_sample = np.zeros((self._latent_dimension))
         for i in range(len(fs_sample)):
+            # the sample is mapped to the feature space 
+            # each RF model only returns coordinate in one dimension
             fs_sample[i] = self.forward_models[i].predict(sample.reshape(1,-1))
 
-        if ocsvm:
-            # now produce sample in feature space to trained OCSVM
-            return self._OCSVM.score_samples(fs_sample.reshape(1,-1))
-        else:
-            # for when just extracting features
-            return fs_sample
+        return fs_sample
     
     def eval_in_residual_space(self, sample: np.ndarray) -> float:
 
@@ -86,139 +108,34 @@ class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
         # calculate SPE for this sample
         return np.sum(np.square(sample-reconstruction))
 
-    def _plot_features_vs_permuted2D(self, y):
-
-        import os
-
-        colors = ['blue','black']
-        plt.figure(figsize=(16, 9))
-        if self._manifold_dimension > 1:
-            plt.scatter(self._feature_set[:,0][y==0], self._feature_set[:,1][y==0], c='blue', marker='o')
-            plt.scatter(self._feature_set[:,0][y==1], self._feature_set[:,1][y==1], c='black', marker='x')
-        else:
-            plt.scatter(list(range(self._feature_set.shape[0])), self._feature_set[:,0], c=y, cmap=matplotlib.colors.ListedColormap(colors))
-        plt.xlabel('1st MDS component')
-        plt.ylabel('2nd MDS component')
-        plt.legend(['Real', 'Permuted'])
-        plt.title(f'2D MDS coordinates in {self._manifold_dimension}-dimensional space.')
-        plt.grid(True)
-        plt.savefig(fname=os.path.join(self.save_to_folder, 'RandomForestFeaturesNOCvsPermuted'))
-
-    def _project_NOCFault_features2D(self):
-
-        X = np.concatenate([self.dataset.X_tr, self.dataset.X_val, self.dataset.X_test])
-        y = np.concatenate([self.dataset.y_tr, self.dataset.y_val, self.dataset.y_test])
-
-        self._projected_features = np.zeros((X.shape[0], self._feature_set.shape[1]))
-        for i in range(X.shape[0]):
-            self._projected_features[i,:] = self.eval_in_feature_space(X[i,:], ocsvm=False)
-
-        colors = ['blue','green', 'red']
-        plt.figure(figsize=(16, 9))
-        if self._manifold_dimension > 1:
-            plt.scatter(self._projected_features[:,0][y==0], self._projected_features[:,1][y==0], c='blue', marker='o')
-            plt.scatter(self._projected_features[:,0][y==2], self._projected_features[:,1][y==2], c='green', marker='x')
-            plt.scatter(self._projected_features[:,0][y==1], self._projected_features[:,1][y==1], c='red', marker='*')
-        else:
-            plt.scatter(list(range(self._projected_features[:,0])), self._projected_features[:,0], c=y, cmap=matplotlib.colors.ListedColormap(colors))
-        plt.xlabel('1st MDS component')
-        plt.ylabel('2nd MDS component')
-        plt.legend(['Train', 'Validation', 'Fault'])
-        plt.title(f'2D MDS coordinates in {self._manifold_dimension}-dimensional space.')
-        plt.grid(True)
-        plt.savefig(fname=os.path.join(self.save_to_folder, 'RandomForestFeaturesWithFault'))
-
-        OCSVM = OneClassSVM().fit(self._projected_features[:,:2][y==0])
-
-        y_pred_train = OCSVM.predict(self._projected_features[:, :2][y==0])
-        y_pred_val = OCSVM.predict(self._projected_features[:, :2][y==2])
-        y_pred_fault = OCSVM.predict(self._projected_features[:, :2][y==1])
-        n_error_train = y_pred_train[y_pred_train == -1].size
-        n_error_test = y_pred_val[y_pred_val == -1].size
-        n_error_outliers = y_pred_fault[y_pred_fault == 1].size
-
-        xx, yy = np.meshgrid(np.linspace(np.min(self._projected_features[:,0]), np.max(self._projected_features[:,1]), 500), 
-                             np.linspace(np.min(self._projected_features[:,0]), np.max(self._projected_features[:,1]), 500))
-
-        # plot the line, the points, and the nearest vectors to the plane
-        Z = OCSVM.decision_function(np.c_[xx.ravel(), yy.ravel()])
-        Z = Z.reshape(xx.shape)
-
-        plt.figure(figsize=(16, 9))
-        plt.contourf(xx, yy, Z, levels=np.linspace(Z.min(), 0, 7), cmap=plt.cm.PuBu)
-        a = plt.contour(xx, yy, Z, levels=[0], linewidths=2, colors="darkred")
-        plt.contourf(xx, yy, Z, levels=[0, Z.max()], colors="palevioletred")
-
-        s = 40
-        b1 = plt.scatter(self._projected_features[:,0][y==0], self._projected_features[:, 1][y==0], c="white", s=s, edgecolors="k")
-        b2 = plt.scatter(self._projected_features[:,0][y==2], self._projected_features[:,1][y==2], c="blueviolet", s=s, edgecolors="k")
-        c = plt.scatter(self._projected_features[:,0][y==1], self._projected_features[:,1][y==1], c="gold", s=s, edgecolors="k")
-        plt.axis("tight")
-        plt.xlim((np.min(self._projected_features[:,0]), np.max(self._projected_features[:,0])))
-        plt.ylim((np.min(self._projected_features[:,1]), np.max(self._projected_features[:,1])))
-        plt.legend(
-            [a.collections[0], b1, b2, c],
-            [
-                "learned boundary",
-                "X NOC",
-                "X val",
-                "Fault",
-            ],
-            loc="upper left",
-            prop=matplotlib.font_manager.FontProperties(size=11),
-        )
-        plt.xlabel(
-            "error train: %d/%d ; errors novel regular: %d/%d ; errors novel abnormal: %d/%d"
-            % (n_error_train, len(y_pred_train), n_error_test, len(y_pred_val), n_error_outliers, len(y_pred_fault))
-        )
-        plt.grid(True)
-        plt.savefig(fname=os.path.join(self.save_to_folder, 'OCSVMPredictionsWithFault'))
-
-        # also use full feature space and output results to json file
-        OCSVM = OneClassSVM().fit(self._projected_features[:,:][y==0])
-        y_pred_train = OCSVM.predict(self._projected_features[:,:][y==0])
-        y_pred_val = OCSVM.predict(self._projected_features[:,:][y==2])
-        y_pred_fault = OCSVM.predict(self._projected_features[:,:][y==1])
-        n_error_train = y_pred_train[y_pred_train == -1].size
-        n_error_val = y_pred_val[y_pred_val == -1].size
-        n_error_fault = y_pred_fault[y_pred_fault == 1].size
-
-        res = {
-            "train" : {
-                "num_samples": self.dataset.X_tr.shape[0],
-                "accuracy": (len(y_pred_train) - n_error_train) / len(y_pred_train) * 100
-            }, 
-            "validation" : {
-                "num_samples": self.dataset.X_val.shape[0],
-                "accuracy": (len(y_pred_val) - n_error_val) / len(y_pred_val) * 100
-            },
-            "fault" : {
-                "num_samples": self.dataset.X_test.shape[0],
-                "accuracy": (len(y_pred_fault) - n_error_fault) / len(y_pred_fault) * 100
-            }
-        }
-
-        import json
-        with open(os.path.join(self.save_to_folder, 'FullFeatureSpaceResults.json'), 'w', encoding='utf-8') as f:
-            json.dump(res, f, ensure_ascii=False, indent=4)
-
     def _proximity_matrix(self, 
                           model: RandomForestClassifier, 
                           X: np.ndarray, 
                           normalize: bool=True, 
                           plot: bool=True) -> np.ndarray:      
+        """Generate proximity matrix.
 
+        Args:
+            model (RandomForestClassifier): RF-classifier trained on NOC and permuted data
+            X (np.ndarray): Training set (N x M)
+            normalize (bool, optional): Whether to scale resulting matrix by number of estimators. Defaults to True.
+            plot (bool, optional): Whether to plot and save. Defaults to True.
+
+        Returns:
+            np.ndarray: N x N proximity matrix
+        """
+        # get terminal nodes
         terminals = model.apply(X)
 
         a = terminals[:,0]
         proxMat = 1*np.equal.outer(a, a)
 
-        for i in range(1, self.n_estimators):
+        for i in range(1, self._n_estimators):
             a = terminals[:,i]
             proxMat += 1*np.equal.outer(a, a)
 
         if normalize:
-            proxMat = proxMat / self.n_estimators
+            proxMat = proxMat / self._n_estimators
        
         if plot:
             plt.figure(figsize=(16,9))
@@ -227,11 +144,22 @@ class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
             plt.xlabel('Sample number x')
             plt.ylabel('Sample number y')
             plt.title(f'Random Forest Proximity matrix.')
-            plt.savefig(fname=os.path.join(self.save_to_folder, 'RandomForestProximityMatrix'))
+            plt.savefig(fname=os.path.join(self._save_to_folder, 'RandomForestProximityMatrix'))
         
         return proxMat   
     
-    def _get_manifold_dimension(self, X: np.ndarray, dimension: int = 20) -> np.ndarray:
+    def _get_manifold_dimension(self, X: np.ndarray, dimension: int = 20) -> None:
+        """
+        Try to get an estimate of the dimensionality of the data by by comparing the eigenvalues
+        calculated in a scaled feature space (using MDS), with the eigenvalues of a permuted dataset.
+        The N components with eigenvalues larger than that of the permuted eigenvalues is used as dimension.
+
+        Args:
+            X (np.ndarray): Dissimilarity matrix
+            dimension (int, optional): Initial amount of dimensions for the MDS algorithm. Defaults to 20.
+
+        Sets the manifold dimension for as class member.
+        """
 
         manifold = MDS(n_components=dimension)
         projection = manifold.fit_transform(X)
@@ -239,41 +167,50 @@ class RandomForestFeatures(GenericFeatureExtractor.FeatureExtractor):
         from sklearn.decomposition import PCA
         from sklearn.preprocessing import StandardScaler
 
+        # now use PCA to calculate eigenvalues for each dimension in the projection
         X_sc = StandardScaler().fit_transform(projection)
-        pcs = PCA(n_components=dimension).fit(X_sc)
+        pcs = PCA().fit(X_sc)
 
         # shuffle for baseline
         X_sc_permuted = X_sc.copy()
         for i in range(dimension):
             X_sc_permuted[:,i] = np.random.permutation(X_sc_permuted[:,i])
-        pcs_permuted = PCA(n_components=dimension).fit(X_sc_permuted)
+        pcs_permuted = PCA().fit(X_sc_permuted)
 
-        self._manifold_dimension = np.argmax(pcs_permuted.explained_variance_ratio_ > pcs.explained_variance_ratio_)
+        self._latent_dimension = np.argmax(pcs_permuted.explained_variance_ratio_ > pcs.explained_variance_ratio_)
 
-        plt.figure(figsize=(16,9))
-        plt.plot(list(range(dimension)), pcs.explained_variance_ratio_*100, marker='o')
-        plt.plot(list(range(dimension)), pcs_permuted.explained_variance_ratio_*100, marker='x', c='k')
-        plt.xlabel('Principal component number')
-        plt.ylabel('% variance explained')
-        plt.legend(['MDS Features', 'Shuffled Dataset'])
-        plt.title(f'Determining number of manifold dimensions using PCA and a dummy dataset')
-        plt.savefig(fname=os.path.join(self.save_to_folder, 'MDSFeaturesPCA'))
+        if self._save_to_folder:
+            plt.figure(figsize=(16,9))
+            plt.plot(list(range(dimension)), pcs.explained_variance_ratio_*100, marker='o')
+            plt.plot(list(range(dimension)), pcs_permuted.explained_variance_ratio_*100, marker='x', c='k')
+            plt.xlabel('Principal component number')
+            plt.ylabel('% variance explained')
+            plt.legend(['MDS Features', 'Shuffled Dataset'])
+            plt.title(f'Determining number of manifold dimensions using PCA and a dummy dataset')
+            plt.savefig(fname=os.path.join(self._save_to_folder, 'MDSFeaturesPCA'))
 
     def _generate_manifold(self, X: np.ndarray) -> np.ndarray:
 
-        manifold = MDS(n_components=self._manifold_dimension)
+        manifold = MDS(n_components=self._latent_dimension)
         return manifold.fit_transform(X)
     
     def _train_forward_mapping(self, X: np.ndarray) -> None:
+        """
+        Trains a model to map from sequences of time series data, to each of the dimensions in the feature space.
+        The model learns to map the training data to the feature space representation of the data.
+        Each model maps samples to a single dimension, results need to be concatenated to generate feature space.
+        Args:
+            X (np.ndarray): (N x M) training dataset.
+        """
 
         self.forward_models = {
-            i:RandomForestRegressor(self.n_estimators).fit(X, self._feature_set[:,i]) for i in range(self._feature_set.shape[1])
+            i:RandomForestRegressor(self._n_estimators).fit(X, self._train_features[:,i]) for i in range(self._train_features.shape[1])
         }
 
     def _train_reverse_mapping(self, X: np.ndarray) -> None:
-
+        ## TODO: this is wrong, but not using since SPC not finished
         self.reverse_models = {
-            i:RandomForestRegressor(self.n_estimators).fit(self._feature_set, X[:,i]) for i in range(X.shape[1])
+            i:RandomForestRegressor(self._n_estimators).fit(self._train_features, X[:,i]) for i in range(X.shape[1])
         }
 
 if __name__ == "__main__":
