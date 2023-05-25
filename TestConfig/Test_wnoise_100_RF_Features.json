@@ -1,0 +1,18 @@
+{
+    "dataset": {
+        "name": "Test",
+        "simulation_length": 1000,
+        "transition_position": 0.7, 
+        "permutation": "white noise", 
+        "window_length": 100, 
+        "stride": 1, 
+        "seed": 123
+    },
+    "feature_extraction": {
+        "name": "RandomForestFeatureExtraction",
+        "num_trees": 200
+    }, 
+    "mode": {
+        "name": "ExtractFeatures"
+    }
+}

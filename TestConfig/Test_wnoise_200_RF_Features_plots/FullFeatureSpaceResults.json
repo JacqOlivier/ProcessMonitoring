@@ -1,0 +1,14 @@
+{
+    "train": {
+        "num_samples": 350,
+        "accuracy": 49.42857142857143
+    },
+    "validation": {
+        "num_samples": 151,
+        "accuracy": 16.387959866220736
+    },
+    "fault": {
+        "num_samples": 299,
+        "accuracy": 31.125827814569533
+    }
+}
