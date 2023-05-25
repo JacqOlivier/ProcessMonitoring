@@ -13,28 +13,28 @@ Setup steps for this stage of the project:
 
 1. Make sure you have git installed and clone the package into desired directory using the commandline:
 
-```git clone https://github.com/JacqOlivier/ProcessMonitoring.git``` 
+    ```git clone https://github.com/JacqOlivier/ProcessMonitoring.git``` 
 
 2.  Create a Python virtual environment, from the commandline:
 
-`python -m venv env`
+    `python -m venv env`
 
 3. Activate the virtual environment (for windows) from commandline:
 
-`./env/Scripts/activate`
+    `./env/Scripts/activate`
 
 4. Install required packages in the requirements.txt file:
 
-`pip install -r /path/to/package/requirements.txt`
+    `pip install -r /path/to/package/requirements.txt`
 
 5. From inside the project folder (with setup.py), install the processmonitoring package using pip:
 
-`pip install -e .`
+    `pip install -e .`
 
 This will install the package in editable mode, important for development.
 
 ## Running the program
-Experiments are configured with a configuration file. The path to this configuration file is then passed as the only commandline argument to the run.py method (program entry point)
+Experiments are configured with a configuration file. The path to this configuration file is then passed as the only commandline argument to the run.py method (program entry point). A VS Code launch file is also added in the repository as an example.
 ## Project structure
 An experiment consists of the following components:
 
