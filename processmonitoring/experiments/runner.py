@@ -36,14 +36,7 @@ class ExperimentRunner:
             self._logger.exception(f'Error trying to generate feature model: {self._feature_config["name"]}.')
             raise
         
-        
-        """
+    def run(self) -> None:
+
         ### Model training step 
-        self.model.train(mode=self._run_config)
-
-        if self._run_config['name'] == 'StatisticalProcessControl': 
-            self.runner = spc.SPC(self.dataset, 
-                                  self.model,
-                                  self._save_to_folder)
-
-        """
+        self._model.train(mode=self._run_config)

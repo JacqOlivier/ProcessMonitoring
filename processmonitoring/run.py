@@ -61,11 +61,12 @@ def main(argv):
     try:
         plot_dir = _create_new_folder(argv)
     except:
+        # just continue without plotting
         logging.exception("Exception during folder creation.")
-        raise
 
     try:
-        _ = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+        exp = runner.ExperimentRunner(config, plot_dir if plot_dir else None)
+        exp.run()
     except:
         logging.exception("Exception occurred somewhere else in experiment. Traceback below")
         raise

@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/processmonitoring/run.py",
             "console": "integratedTerminal",
             "args": [
-                "/home/juc/dev/ProcessMonitoring/processmonitoring/cfg/SWTR/CNN/SWTR_iaaft_100_CNN_Features.json"
+                "/home/juc/dev/ProcessMonitoring/processmonitoring/cfg/SWTR/RandomForest/SWTR_iaaft_100_RF_Features.json"
             ]
         }
     ]

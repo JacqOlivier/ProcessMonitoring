@@ -19,9 +19,7 @@ class AutoEncoderFeatures(GenericFeatureExtractor.FeatureExtractor):
                  feature_config: dict,
                  save_to_folder: str = None) -> None:
         
-        super(AutoEncoderFeatures, self).__init__(dataset=dataset, 
-                                                  save_to_folder=save_to_folder)
-        self._config = feature_config
+        super().__init__(dataset, feature_config, save_to_folder)
 
     def train(self, mode: dict):
 
