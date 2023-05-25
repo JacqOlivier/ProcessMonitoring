@@ -2,8 +2,7 @@ import os
 import sys
 import json
 import logging
-
-from processmonitoring.experiments import runner
+import runner
 
 def _start_logger():
     logging.basicConfig(filename = 'file.log',
